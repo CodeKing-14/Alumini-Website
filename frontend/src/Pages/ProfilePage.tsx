@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getProfile,
   updateProfile,
   uploadPhoto,
   getRegisteredEvents,
+  logout,
 } from "../services/api";
 
 import type { AlumniProfile, RegisteredEvent } from "../services/api";
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<AlumniProfile | null>(null);
   const [events, setEvents] = useState<RegisteredEvent[]>([]);
   const [form, setForm] = useState<Partial<AlumniProfile>>({});
@@ -70,6 +73,12 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+    alert("Logged out successfully!");
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -94,9 +103,17 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-gray-800">
-          My Profile
-        </h1>
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            My Profile
+          </h1>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition text-sm font-medium"
+          >
+            Logout
+          </button>
+        </div>
 
         {message && (
           <div className="bg-green-100 text-green-700 p-3 rounded-lg mb-4 text-sm sm:text-base">

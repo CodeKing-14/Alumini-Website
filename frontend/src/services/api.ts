@@ -1,6 +1,6 @@
 // src/services/api.ts
 
-export const USE_MOCK = true; 
+export const USE_MOCK = false; 
 // 🔥 Change to false when backend is ready
 
 // ----------------------
@@ -64,6 +64,11 @@ const mockEvents: RegisteredEvent[] = [
   },
 ];
 
+// Helper to get auth token
+function getAuthToken(): string | null {
+  return localStorage.getItem("token");
+}
+
 // ----------------------
 // API FUNCTIONS
 // ----------------------
@@ -71,7 +76,17 @@ const mockEvents: RegisteredEvent[] = [
 export async function getProfile(): Promise<AlumniProfile> {
   if (USE_MOCK) return Promise.resolve(mockProfile);
 
-  const res = await fetch("/api/me");
+  const token = getAuthToken();
+  const res = await fetch("/api/me", {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  
+  if (!res.ok) {
+    throw new Error("Failed to fetch profile");
+  }
   return res.json();
 }
 
@@ -80,9 +95,13 @@ export async function updateProfile(
 ): Promise<AlumniProfile> {
   if (USE_MOCK) return Promise.resolve({ ...mockProfile, ...data });
 
+  const token = getAuthToken();
   const res = await fetch("/api/me", {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(data),
   });
 
@@ -102,11 +121,15 @@ export async function uploadPhoto(
     });
   }
 
+  const token = getAuthToken();
   const formData = new FormData();
   formData.append("photo", file);
 
   const res = await fetch("/api/me/photo", {
     method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: formData,
   });
 
@@ -116,6 +139,29 @@ export async function uploadPhoto(
 export async function getRegisteredEvents(): Promise<RegisteredEvent[]> {
   if (USE_MOCK) return Promise.resolve(mockEvents);
 
-  const res = await fetch("/api/me/events");
+  const token = getAuthToken();
+  const res = await fetch("/api/me/events", {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
   return res.json();
+}
+
+export async function logout(): Promise<void> {
+  const token = getAuthToken();
+  try {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  } catch {
+    // Ignore logout errors - client-side cleanup is more important
+  }
+  // Always clear local storage regardless of API response
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
 }

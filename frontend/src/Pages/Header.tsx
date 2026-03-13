@@ -1,10 +1,26 @@
 import { useNavigate } from "react-router-dom"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Header = () => {
 
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    // Check if user is logged in on mount
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        setIsLoggedIn(!!token);
+    }, []);
+
+    const handleLogout = () => {
+        // Clear localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setIsLoggedIn(false);
+        navigate("/");
+        alert("Logged out successfully!");
+    };
 
     return (
         <>
@@ -24,7 +40,6 @@ const Header = () => {
                               { label: 'Events', path: '/events' },
                               { label: 'Gallery', path: '/gallery' },
                               { label: 'Member', path: '/member' },
-                              { label: 'Register::Login', path: '/login' },
                             ].map((item) => (
                               <li key={item.path} className="h-full">
                                 <button
@@ -35,6 +50,23 @@ const Header = () => {
                                 </button>
                               </li>
                             ))}
+                            <li className="h-full">
+                                {isLoggedIn ? (
+                                    <button
+                                      onClick={handleLogout}
+                                      className="h-full px-3 py-1 bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center text-sm md:text-base"
+                                    >
+                                      Logout
+                                    </button>
+                                ) : (
+                                    <button
+                                      onClick={() => navigate('/login')}
+                                      className="h-full px-3 py-1 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center text-sm md:text-base"
+                                    >
+                                      Login
+                                    </button>
+                                )}
+                            </li>
                         </ul>
                     </div>
 
@@ -59,7 +91,6 @@ const Header = () => {
                               { label: 'Events', path: '/events' },
                               { label: 'Gallery', path: '/gallery' },
                               { label: 'Member', path: '/member' },
-                              { label: 'Register::Login', path: '/login' },
                             ].map((item) => (
                               <li key={item.path} className="w-full border-b border-blue-600">
                                 <button
@@ -73,6 +104,31 @@ const Header = () => {
                                 </button>
                               </li>
                             ))}
+                            {isLoggedIn ? (
+                                <li className="w-full border-b border-blue-600">
+                                    <button
+                                      onClick={() => {
+                                        handleLogout();
+                                        setMobileMenuOpen(false);
+                                      }}
+                                      className="w-full px-4 py-3 text-white hover:bg-red-700 transition-colors text-left"
+                                    >
+                                      Logout
+                                    </button>
+                                </li>
+                            ) : (
+                                <li className="w-full border-b border-blue-600">
+                                    <button
+                                      onClick={() => {
+                                        navigate('/login');
+                                        setMobileMenuOpen(false);
+                                      }}
+                                      className="w-full px-4 py-3 text-white hover:bg-green-700 transition-colors text-left"
+                                    >
+                                      Login
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                       </div>
                     )}
@@ -84,3 +140,4 @@ const Header = () => {
 }
 
 export default Header
+
