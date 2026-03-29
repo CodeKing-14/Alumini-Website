@@ -39,7 +39,7 @@ const App = () => {
     const fetchGallery = async () => {
       try {
         setGalleryLoading(true);
-        const res = await fetch("http://localhost:5000/api/gallery");
+        const res = await fetch("http://localhost:8000/api/gallery");
         if (!res.ok) throw new Error("Failed to fetch gallery");
 
         const data = await res.json();

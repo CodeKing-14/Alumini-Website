@@ -61,7 +61,7 @@ const Header = () => {
                                 ) : (
                                     <button
                                       onClick={() => navigate('/login')}
-                                      className="h-full px-3 py-1 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center text-sm md:text-base"
+                                      className="h-full px-3 py-1 bg-red-600 text-white hover:bg-green-700 transition-colors flex items-center text-sm md:text-base"
                                     >
                                       Login
                                     </button>
@@ -111,7 +111,7 @@ const Header = () => {
                                         handleLogout();
                                         setMobileMenuOpen(false);
                                       }}
-                                      className="w-full px-4 py-3 text-white hover:bg-red-700 transition-colors text-left"
+                                      className="w-full px-4 py-3 text-white hover:bg-red-600 transition-colors text-left"
                                     >
                                       Logout
                                     </button>
@@ -123,7 +123,7 @@ const Header = () => {
                                         navigate('/login');
                                         setMobileMenuOpen(false);
                                       }}
-                                      className="w-full px-4 py-3 text-white hover:bg-green-700 transition-colors text-left"
+                                      className="w-full px-4 py-3 text-white hover:bg-red-600 transition-colors text-left"
                                     >
                                       Login
                                     </button>

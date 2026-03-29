@@ -33,7 +33,7 @@ export const alumniMembers = [
 ];
 
 const Member = () => {
-  const [members, setMembers] = useState(alumniMembers);
+  const [members, setMembers] = useState<typeof alumniMembers>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,23 +42,23 @@ const Member = () => {
     const fetchMembers = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:5000/api/members");
+        // Use Vite proxy path — works in dev and avoids CORS issues
+        const response = await fetch("/api/members");
 
         if (!response.ok) {
           throw new Error("Failed to fetch members");
         }
 
         const data = await response.json();
-        if (data && data.length > 0) {
-          setMembers(data);
-        }
-
+        // Always use DB data (even if empty array)
+        setMembers(Array.isArray(data) ? data : []);
         setError(null);
       } catch (err) {
         console.error("Error fetching members:", err);
         setError(
           err instanceof Error ? err.message : "Failed to fetch members"
         );
+        // On error, fall back to static list so page isn't blank
         setMembers(alumniMembers);
       } finally {
         setLoading(false);
@@ -122,7 +122,9 @@ const Member = () => {
           {filteredMembers.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 text-lg">
-                No members found.
+                {searchTerm
+                  ? "No members match your search."
+                  : "No registered members yet. Be the first to register!"}
               </p>
             </div>
           ) : (
@@ -143,7 +145,7 @@ const Member = () => {
                   </h2>
 
                   <p className="text-gray-500 text-sm mb-2">
-                     Batch: {member.batch}
+                    Batch: {member.batch}
                   </p>
 
                   <p className="text-gray-700 font-semibold">

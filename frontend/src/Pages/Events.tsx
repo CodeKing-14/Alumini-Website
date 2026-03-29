@@ -75,7 +75,7 @@ const Events = () => {
       try {
         setLoading(true);
         // Replace with your actual backend API endpoint
-        const response = await fetch('http://localhost:5000/api/events'); // Update with your API URL
+        const response = await fetch('http://localhost:8000/api/events'); // Update with your API URL
         
         if (!response.ok) {
           throw new Error('Failed to fetch events');

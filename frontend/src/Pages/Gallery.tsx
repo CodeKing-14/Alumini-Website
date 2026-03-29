@@ -68,7 +68,7 @@ const Gallery = () => {
       try {
         setLoading(true);
 
-        const res = await fetch("http://localhost:5000/api/gallery");
+        const res = await fetch("http://localhost:8000/api/gallery");
         if (!res.ok) throw new Error("Failed to fetch gallery");
 
         const data = await res.json();
@@ -107,7 +107,7 @@ const Gallery = () => {
       formData.append("uploadedBy", uploadedBy.trim() || "Anonymous");
       formData.append("image", file); // backend should read: req.file
 
-      const res = await fetch("http://localhost:5000/api/gallery/uploads", {
+      const res = await fetch("http://localhost:8000/api/gallery/uploads", {
         method: "POST",
         body: formData,
       });
