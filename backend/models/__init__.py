@@ -10,6 +10,15 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
 
+    # Extended profile fields
+    phone = Column(String(20), nullable=True)
+    department = Column(String(100), nullable=True)
+    batch_year = Column(Integer, nullable=True)
+    current_company = Column(String(255), nullable=True)
+    job_title = Column(String(255), nullable=True)
+    bio = Column(Text, nullable=True)
+    photo_url = Column(String(500), nullable=True)
+
 
 class Event(Base):
     __tablename__ = "events"

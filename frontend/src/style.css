@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -5,7 +7,27 @@
 @custom-variant dark (&:is(.dark *));
 
 body{
-    @apply bg-blue-600 m-0 p-0;
+    @apply bg-slate-50 m-0 p-0 text-slate-800;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+    .glass {
+        @apply bg-white/85 backdrop-blur-md border border-white/40 shadow-xl;
+    }
+    
+    .text-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600;
+    }
+    
+    .hover-lift {
+        @apply transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl;
+    }
+    
+    .btn-gradient {
+        @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300;
+    }
 }
 
 @theme inline {

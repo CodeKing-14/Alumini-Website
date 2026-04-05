@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
-from routes import auth_router, members_router, events_router, gallery_router
+from routes import auth_router, members_router, events_router, gallery_router, profile_router
 from database import Base, engine
 
 
@@ -56,3 +56,4 @@ app.include_router(auth_router, prefix="/api/auth")
 app.include_router(members_router, prefix="/api")
 app.include_router(events_router, prefix="/api")
 app.include_router(gallery_router, prefix="/api")
+app.include_router(profile_router, prefix="/api")

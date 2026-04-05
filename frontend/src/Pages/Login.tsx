@@ -7,8 +7,12 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  
+  // Login fields
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  
+  // Register fields
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -110,131 +114,191 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center px-4 py-8"
-      style={{ backgroundImage: `url(${bgImage})` }}
-    >
-      {/* ✅ Responsive Card */}
-      <div className="relative w-[92%] sm:w-105 md:w-130 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden">
-        <motion.div
-          animate={{ x: isLogin ? "0%" : "-50%" }}
-          transition={{ duration: 0.5 }}
-          className="flex w-[200%]"
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900 px-4 py-8">
+      {/* Background with overlay */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={bgImage}
+          alt="Campus Background"
+          className="w-full h-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-blue-900/80"></div>
+      </div>
+
+      {/* Decorative Blobs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob z-0"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/30 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob animation-delay-2000 z-0"></div>
+
+      {/* Glassmorphism Card */}
+      <div className="relative z-10 w-full max-w-md sm:max-w-lg lg:max-w-xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden p-1">
+        
+        {/* Navigation back */}
+        <button 
+          onClick={() => navigate('/')} 
+          className="absolute top-6 left-6 text-white/70 hover:text-white transition-colors z-20 flex items-center gap-2 text-sm font-medium"
         >
-          {/* ================= LOGIN ================= */}
-          <div className="w-1/2 flex flex-col justify-center px-5 sm:px-8 py-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-center text-blue-600 mb-6">
-              Login
-            </h2>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          Home
+        </button>
 
-            <input
-              type="email"
-              placeholder="Email"
-              disabled={loading}
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              className="mb-4 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-60"
-            />
+        <div className="bg-white rounded-3xl overflow-hidden shadow-inner relative">
+          <motion.div
+            animate={{ x: isLogin ? "0%" : "-50%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="flex w-[200%]"
+          >
+            {/* ================= LOGIN ================= */}
+            <div className="w-1/2 flex flex-col justify-center px-8 sm:px-12 py-16">
+              <div className="text-center mb-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl mx-auto mb-4 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  SR
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Welcome Back
+                </h2>
+                <p className="text-sm text-slate-500 mt-2">Sign in to your alumni account</p>
+              </div>
 
-            <input
-              type="password"
-              placeholder="Password"
-              disabled={loading}
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              className="mb-6 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-60"
-            />
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    disabled={loading}
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60"
+                  />
+                </div>
 
-            <button
-              onClick={handleLogin}
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {loading && isLogin && (
-                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-              )}
-              {loading && isLogin ? "Logging in..." : "Login"}
-            </button>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-slate-700">Password</label>
+                    <a href="#" className="text-xs font-semibold text-blue-600 hover:text-blue-500">Forgot password?</a>
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    disabled={loading}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60"
+                  />
+                </div>
 
-            <p className="text-xs sm:text-sm text-center mt-6">
-              Don't have an account?{" "}
-              <span
-                onClick={toggleMode}
-                className={`text-blue-600 font-medium ${
-                  loading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                }`}
-              >
-                Register
-              </span>
-            </p>
-          </div>
+                <div className="pt-2">
+                  <button
+                    onClick={handleLogin}
+                    disabled={loading}
+                    className="btn-gradient w-full py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {loading && isLogin && (
+                      <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                    )}
+                    {loading && isLogin ? "Signing in..." : "Sign In"}
+                  </button>
+                </div>
+              </div>
 
-          {/* ================= REGISTER ================= */}
-          <div className="w-1/2 flex flex-col justify-center px-5 sm:px-8 py-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-center text-blue-600 mb-6">
-              Register
-            </h2>
+              <p className="text-sm text-center mt-8 text-slate-600">
+                Don't have an account?{" "}
+                <button
+                  onClick={toggleMode}
+                  disabled={loading}
+                  className="text-blue-600 font-bold hover:text-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Create account
+                </button>
+              </p>
+            </div>
 
-            <input
-              type="text"
-              placeholder="Full Name"
-              disabled={loading}
-              value={registerName}
-              onChange={(e) => setRegisterName(e.target.value)}
-              className="mb-4 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-60"
-            />
+            {/* ================= REGISTER ================= */}
+            <div className="w-1/2 flex flex-col justify-center px-8 sm:px-12 py-12">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Join the Network
+                </h2>
+                <p className="text-sm text-slate-500 mt-2">Create your alumni profile</p>
+              </div>
 
-            <input
-              type="email"
-              placeholder="Email"
-              disabled={loading}
-              value={registerEmail}
-              onChange={(e) => setRegisterEmail(e.target.value)}
-              className="mb-4 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-60"
-            />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="John Doe"
+                    disabled={loading}
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60 text-sm"
+                  />
+                </div>
 
-            <input
-              type="password"
-              placeholder="Password"
-              disabled={loading}
-              value={registerPassword}
-              onChange={(e) => setRegisterPassword(e.target.value)}
-              className="mb-4 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-60"
-            />
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    disabled={loading}
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60 text-sm"
+                  />
+                </div>
 
-            <input
-              type="number"
-              placeholder="Batch Year"
-              disabled={loading}
-              value={registerBatchYear}
-              onChange={(e) => setRegisterBatchYear(e.target.value)}
-              className="mb-6 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-60"
-            />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      disabled={loading}
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Batch Year</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 2020"
+                      disabled={loading}
+                      value={registerBatchYear}
+                      onChange={(e) => setRegisterBatchYear(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60 text-sm"
+                    />
+                  </div>
+                </div>
 
-            <button
-              onClick={handleRegister}
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {loading && !isLogin && (
-                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-              )}
-              {loading && !isLogin ? "Registering..." : "Register"}
-            </button>
+                <div className="pt-4">
+                  <button
+                    onClick={handleRegister}
+                    disabled={loading}
+                    className="btn-gradient w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {loading && !isLogin && (
+                      <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                    )}
+                    {loading && !isLogin ? "Creating account..." : "Create Account"}
+                  </button>
+                </div>
+              </div>
 
-            <p className="text-xs sm:text-sm text-center mt-6">
-              Already have an account?{" "}
-              <span
-                onClick={toggleMode}
-                className={`text-blue-600 font-medium ${
-                  loading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                }`}
-              >
-                Login
-              </span>
-            </p>
-          </div>
-        </motion.div>
+              <p className="text-sm text-center mt-6 text-slate-600">
+                Already have an account?{" "}
+                <button
+                  onClick={toggleMode}
+                  disabled={loading}
+                  className="text-blue-600 font-bold hover:text-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Sign in
+                </button>
+              </p>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

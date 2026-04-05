@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
@@ -17,6 +17,12 @@ class UserCreate(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+    # Ensure numeric-only passwords (e.g. "123456") are accepted
+    @field_validator("password", mode="before")
+    @classmethod
+    def coerce_password_to_str(cls, v: Any) -> str:
+        return str(v)
+
     @property
     def name(self) -> str:
         return self.fullName
@@ -25,6 +31,38 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def coerce_password_to_str(cls, v: Any) -> str:
+        return str(v)
+
+
+# ── Profile Schemas ───────────────────────────────────────────────────────────
+
+class AlumniProfileResponse(BaseModel):
+    id: str
+    fullName: str
+    email: str
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    batchYear: Optional[int] = None
+    currentCompany: Optional[str] = None
+    jobTitle: Optional[str] = None
+    bio: Optional[str] = None
+    photoUrl: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class AlumniProfileUpdate(BaseModel):
+    fullName: Optional[str] = None
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    batchYear: Optional[int] = None
+    currentCompany: Optional[str] = None
+    jobTitle: Optional[str] = None
+    bio: Optional[str] = None
 
 
 # ── Event Schemas ─────────────────────────────────────────────────────────────
