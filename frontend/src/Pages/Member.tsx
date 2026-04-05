@@ -91,13 +91,13 @@ const Member = () => {
       <div className="bg-slate-900 pt-16 pb-24 relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full filter blur-3xl -translate-y-1/2"></div>
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-600/20 rounded-full filter blur-3xl translate-y-1/2"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
-             Alumni <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Directory</span>
+            Alumni <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Directory</span>
           </h1>
           <p className="text-slate-300 text-lg max-w-2xl mx-auto">
-             Find, connect, and network with graduates from across the globe. Tap into the power of the SRIT network.
+            Find, connect, and network with graduates from across the globe. Tap into the power of the SRIT network.
           </p>
         </div>
       </div>
@@ -126,7 +126,7 @@ const Member = () => {
                 className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 text-slate-700 font-medium transition-all"
               />
               {searchTerm && (
-                <button 
+                <button
                   onClick={() => setSearchTerm('')}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600"
                 >
@@ -158,7 +158,7 @@ const Member = () => {
                 >
                   {/* Decorative Banner */}
                   <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-slate-100 z-0"></div>
-                  
+
                   {/* Avatar */}
                   <div className="relative z-10 w-24 h-24 mx-auto mt-4 mb-4 rounded-full p-1 bg-gradient-to-br from-blue-500 to-cyan-400 shadow-md transform group-hover:-translate-y-1 transition-transform duration-300">
                     <img
@@ -187,13 +187,10 @@ const Member = () => {
                       <span className="truncate max-w-[180px]">{member.company || "TBD"}</span>
                     </div>
 
-                    <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                      {member.location || "Remote"}
-                    </div>
+
                   </div>
-                  
-                  
+
+
                 </div>
               ))}
             </div>
