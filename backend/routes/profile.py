@@ -65,19 +65,19 @@ def update_profile(
     db: Session = Depends(get_db),
 ):
     if data.fullName is not None:
-        user.name = data.fullName
+        user.name = data.fullName #type: ignore
     if data.phone is not None:
-        user.phone = data.phone
+        user.phone = data.phone #type: ignore
     if data.department is not None:
-        user.department = data.department
+        user.department = data.department #type: ignore
     if data.batchYear is not None:
-        user.batch_year = data.batchYear
+        user.batch_year = data.batchYear #type: ignore
     if data.currentCompany is not None:
-        user.current_company = data.currentCompany
+        user.current_company = data.currentCompany #type: ignore
     if data.jobTitle is not None:
-        user.job_title = data.jobTitle
+        user.job_title = data.jobTitle #type: ignore
     if data.bio is not None:
-        user.bio = data.bio
+        user.bio = data.bio #type: ignore
 
     db.commit()
     db.refresh(user)
@@ -97,7 +97,7 @@ def upload_photo(
     with open(file_path, "wb") as f:
         shutil.copyfileobj(photo.file, f)
 
-    user.photo_url = f"/static/photos/{filename}"
+    user.photo_url = f"/static/photos/{filename}" #type: ignore
     db.commit()
     return {"photoUrl": user.photo_url}
 
