@@ -9,6 +9,8 @@ from schemas import UserCreate, UserLogin
 router = APIRouter(tags=["auth"])
 
 
+
+
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
@@ -23,7 +25,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Check if email already exists
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="User already registered",
         )
 
@@ -31,6 +33,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         name=user_data.fullName,
         email=user_data.email,
         password_hash=hash_password(user_data.password),
+        batch_year=user_data.batchYear,
     )
 
     try:
