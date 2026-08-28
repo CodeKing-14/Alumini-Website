@@ -39,6 +39,7 @@ const cachedGallery: GalleryItem[] = [
 
 
 const Gallery = () => {
+  const isAdmin = JSON.parse(localStorage.getItem("user") || "null")?.role === "admin";
   const [items, setItems] = useState<GalleryItem[]>(cachedGallery);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +75,7 @@ const Gallery = () => {
       } catch (err) {
         console.error("Gallery fetch error:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch gallery");
-        setItems(cachedGallery); 
+        setItems(cachedGallery);
       } finally {
         setLoading(false);
       }
@@ -105,6 +106,9 @@ const Gallery = () => {
 
       const res = await fetch("http://localhost:8000/api/gallery/uploads", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
         body: formData,
       });
 
@@ -149,13 +153,13 @@ const Gallery = () => {
       <div className="bg-slate-900 pt-16 pb-24 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full filter blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600/20 rounded-full filter blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
-             Alumni <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300">Gallery</span>
+            Alumni <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300">Gallery</span>
           </h1>
           <p className="text-slate-300 text-lg max-w-2xl mx-auto">
-             A collection of memories, reunions, and celebrations. Relive the golden days of SRIT.
+            A collection of memories, reunions, and celebrations. Relive the golden days of SRIT.
           </p>
         </div>
       </div>
@@ -171,7 +175,7 @@ const Gallery = () => {
           )}
 
           {/* ✅ Upload Section Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 mb-12">
+          {isAdmin && <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 mb-12">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-indigo-100 flex flex-col items-center justify-center text-indigo-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -230,7 +234,7 @@ const Gallery = () => {
                 </button>
               </div>
             </form>
-          </div>
+          </div>}
 
           {/* ✅ Gallery Grid (Masonry-like flex or auto-fill grid) */}
           {sortedItems.length === 0 ? (
@@ -254,7 +258,7 @@ const Gallery = () => {
                     alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  
+
                   {/* Persistent Gradient overlay at bottom for readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -297,7 +301,7 @@ const Gallery = () => {
               >
                 ✖
               </button>
-              
+
               <div className="relative bg-slate-100 min-h-[300px] flex items-center justify-center">
                 <img
                   src={selected.imageUrl}
@@ -305,7 +309,7 @@ const Gallery = () => {
                   className="w-full max-h-[75vh] object-contain"
                 />
               </div>
-              
+
               <div className="p-6 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-1">{selected.title}</h3>
@@ -317,13 +321,13 @@ const Gallery = () => {
                       </span>
                     )}
                     {selected.createdAt && (
-                       <span className="flex items-center gap-1">
-                         🗓️ {new Date(selected.createdAt).toLocaleString("en-IN")}
-                       </span>
+                      <span className="flex items-center gap-1">
+                        🗓️ {new Date(selected.createdAt).toLocaleString("en-IN")}
+                      </span>
                     )}
                   </div>
                 </div>
-                
+
                 <button
                   onClick={() => setSelected(null)}
                   className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors text-sm"

@@ -7,11 +7,12 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  
+
   // Login fields
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  
+  const [loginRole, setLoginRole] = useState<"student" | "admin">("student");
+
   // Register fields
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
@@ -32,11 +33,11 @@ const Login: React.FC = () => {
       }
 
       console.log("Attempting login with:", loginEmail);
-      
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ email: loginEmail, password: loginPassword, role: loginRole }),
       });
 
       console.log("Response status:", res.status);
@@ -51,11 +52,11 @@ const Login: React.FC = () => {
       const data = await res.json();
       console.log("Login response:", data);
       alert(`Welcome, ${data.user.fullName || "Alumni"}!`);
-      
+
       // Store token and user info in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
+
       // Redirect to profile page after successful login
       navigate("/ProfilePage");
       // Optionally clear fields
@@ -131,10 +132,10 @@ const Login: React.FC = () => {
 
       {/* Glassmorphism Card */}
       <div className="relative z-10 w-full max-w-md sm:max-w-lg lg:max-w-xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden p-1">
-        
+
         {/* Navigation back */}
-        <button 
-          onClick={() => navigate('/')} 
+        <button
+          onClick={() => navigate('/')}
           className="absolute top-6 left-6 text-white/70 hover:text-white transition-colors z-20 flex items-center gap-2 text-sm font-medium"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -170,6 +171,19 @@ const Login: React.FC = () => {
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Login as</label>
+                  <select
+                    value={loginRole}
+                    onChange={(e) => setLoginRole(e.target.value as "student" | "admin")}
+                    disabled={loading}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-60"
+                  >
+                    <option value="student">Student / Alumni</option>
+                    <option value="admin">Administrator</option>
+                  </select>
                 </div>
 
                 <div>

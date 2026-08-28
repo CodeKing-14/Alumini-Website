@@ -7,6 +7,8 @@ import uuid
 from database import get_db
 from models import GalleryItem
 from schemas import GalleryResponse
+from routes.auth import require_admin
+from models import User
 
 router = APIRouter(tags=["gallery"])
 
@@ -20,6 +22,7 @@ async def upload_gallery_item(
     title: str = Form(...),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     if not title.strip():
         raise HTTPException(status_code=400, detail="Title is required")

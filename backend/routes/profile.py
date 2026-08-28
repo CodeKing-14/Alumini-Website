@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, status
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import Optional
 import shutil
 import uuid
 from pathlib import Path
@@ -8,34 +7,12 @@ from pathlib import Path
 from database import get_db
 from models import User
 from schemas import AlumniProfileResponse, AlumniProfileUpdate
+from routes.auth import get_current_user
 
 router = APIRouter(tags=["profile"])
 
 STATIC_PHOTOS_DIR = Path(__file__).resolve().parent.parent / "static" / "photos"
 STATIC_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def _get_current_user(
-    authorization: Optional[str] = Header(None),
-    db: Session = Depends(get_db),
-) -> User:
-    """Extract user from the fake token stored as 'token-{id}'."""
-    if not authorization:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-
-    # Expected format: "Bearer token-{id}"
-    try:
-        scheme, token = authorization.split(" ", 1)
-        if scheme.lower() != "bearer" or not token.startswith("token-"):
-            raise ValueError()
-        user_id = int(token.split("token-")[1])
-    except (ValueError, IndexError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
 
 
 def _user_to_profile(user: User) -> dict:
@@ -54,14 +31,14 @@ def _user_to_profile(user: User) -> dict:
 
 
 @router.get("/me")
-def get_profile(user: User = Depends(_get_current_user)):
+def get_profile(user: User = Depends(get_current_user)):
     return _user_to_profile(user)
 
 
 @router.put("/me")
 def update_profile(
     data: AlumniProfileUpdate,
-    user: User = Depends(_get_current_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if data.fullName is not None:
@@ -87,7 +64,7 @@ def update_profile(
 @router.post("/me/photo")
 def upload_photo(
     photo: UploadFile = File(...),
-    user: User = Depends(_get_current_user),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ext = Path(photo.filename).suffix if photo.filename else ".jpg"
@@ -103,6 +80,6 @@ def upload_photo(
 
 
 @router.get("/me/events")
-def get_registered_events(user: User = Depends(_get_current_user)):
+def get_registered_events(user: User = Depends(get_current_user)):
     # No event-registration table yet — return empty list
     return []

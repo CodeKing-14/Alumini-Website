@@ -31,6 +31,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    role: str = "student"
 
     @field_validator("password", mode="before")
     @classmethod
@@ -75,6 +76,13 @@ class EventResponse(BaseModel):
     location: str
 
     model_config = {"from_attributes": True}
+
+
+class EventCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    date: str = Field(..., min_length=1, max_length=100)
+    location: str = Field(..., min_length=1, max_length=255)
 
 
 # ── Gallery Schemas ───────────────────────────────────────────────────────────

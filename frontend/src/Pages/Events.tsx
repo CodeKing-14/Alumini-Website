@@ -66,9 +66,34 @@ export const alumniEvents = [
 ]
 
 const Events = () => {
+  const isAdmin = JSON.parse(localStorage.getItem("user") || "null")?.role === "admin";
   const [events, setEvents] = useState(alumniEvents);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [eventForm, setEventForm] = useState({ title: "", date: "", location: "", description: "" });
+  const [savingEvent, setSavingEvent] = useState(false);
+
+  const handleCreateEvent = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      setSavingEvent(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(eventForm),
+      });
+      if (!response.ok) throw new Error("Could not create event");
+      const saved = await response.json();
+      setEvents((current) => [{ ...saved, purpose: saved.description || "Alumni event", eventType: "Offline", image: alumniEvents[0].image }, ...current]);
+      setEventForm({ title: "", date: "", location: "", description: "" });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create event");
+    } finally {
+      setSavingEvent(false);
+    }
+  };
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -141,6 +166,16 @@ const Events = () => {
       {/* EVENTS GRID */}
       <div className="min-h-screen bg-slate-50 py-12 -mt-12 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {isAdmin && (
+            <form onSubmit={handleCreateEvent} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-10 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <input required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Event title" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input required value={eventForm.date} onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })} placeholder="Date" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input required value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} placeholder="Location" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} placeholder="Description" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
+              <button disabled={savingEvent} type="submit" className="md:col-span-4 btn-gradient py-3 rounded-xl font-bold disabled:opacity-60">{savingEvent ? "Saving..." : "Add Event"}</button>
+            </form>
+          )}
+
           {events.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center max-w-2xl mx-auto mt-12">
               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -194,9 +229,6 @@ const Events = () => {
                       </div>
                     </div>
 
-                    <button className="w-full py-3 bg-slate-50 text-indigo-600 font-semibold rounded-xl border border-slate-100 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-300 text-sm shadow-sm group-hover:shadow-md">
-                      Register Now
-                    </button>
                   </div>
                 </div>
               ))}

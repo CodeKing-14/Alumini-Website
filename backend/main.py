@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from sqlalchemy import inspect, text
 
 from routes import auth_router, members_router, events_router, gallery_router, profile_router
 from database import Base, engine
@@ -14,6 +15,11 @@ async def lifespan(app: FastAPI):
     # @app.on_event("startup") decorator. If MySQL is unavailable, the error
     # surfaces clearly instead of freezing the process.
     try:
+        if inspect(engine).has_table("users") and "role" not in {
+            column["name"] for column in inspect(engine).get_columns("users")
+        }:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'student'"))
         Base.metadata.create_all(bind=engine)
         print("✅  Database tables verified / created.")
     except Exception as exc:

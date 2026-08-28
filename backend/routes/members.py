@@ -9,7 +9,7 @@ router = APIRouter(tags=["members"])
 
 @router.get("/members")
 def get_members(db: Session = Depends(get_db)):
-    users = db.query(User).all()
+    users = db.query(User).filter(User.role != "admin").all()
     members_list = []
     for u in users:
         batch_parts = []
