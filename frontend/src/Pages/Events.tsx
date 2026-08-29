@@ -75,13 +75,17 @@ type NormalizedEvent = {
   eventType: string;
   purpose: string;
   image: string;
+  images: string[];
   description?: string;
 };
 
-// Backend events only carry {id,title,description,date,location,eventType,image}.
+// Backend events carry {id,title,description,date,location,eventType,image,images}.
 // This fills in the extra display fields the card UI expects and never
 // assumes a particular date format, so it can't crash on odd input.
 function normalizeEvent(raw: any): NormalizedEvent {
+  const images: string[] = Array.isArray(raw.images) && raw.images.length > 0
+    ? raw.images
+    : (raw.image ? [raw.image] : [FALLBACK_IMAGE]);
   return {
     id: raw.id,
     title: raw.title || "Untitled Event",
@@ -89,7 +93,8 @@ function normalizeEvent(raw: any): NormalizedEvent {
     location: raw.location || "TBA",
     eventType: raw.eventType || "Offline",
     purpose: raw.purpose || raw.description || "Alumni event",
-    image: raw.image || FALLBACK_IMAGE,
+    image: raw.image || images[0] || FALLBACK_IMAGE,
+    images,
     description: raw.description,
   };
 }
@@ -115,13 +120,53 @@ function DateBadge({ date }: { date: string }) {
   );
 }
 
+// Shows the event's photos one at a time with dot navigation when there's
+// more than one; otherwise just renders the single image.
+function EventImageCarousel({ images, title }: { images: string[]; title: string }) {
+  const [index, setIndex] = useState(0);
+  const safeImages = images.length > 0 ? images : [FALLBACK_IMAGE];
+  const current = safeImages[Math.min(index, safeImages.length - 1)];
+
+  return (
+    <>
+      <img src={current} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+      {safeImages.length > 1 && (
+        <>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIndex((i) => (i - 1 + safeImages.length) % safeImages.length); }}
+            title="Previous photo"
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center text-sm z-10"
+          >
+            ‹
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIndex((i) => (i + 1) % safeImages.length); }}
+            title="Next photo"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center text-sm z-10"
+          >
+            ›
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+            {safeImages.map((_, i) => (
+              <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === index ? "bg-white" : "bg-white/50"}`}></span>
+            ))}
+          </div>
+          <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">
+            {index + 1}/{safeImages.length}
+          </span>
+        </>
+      )}
+    </>
+  );
+}
+
 const Events = () => {
   const isAdmin = JSON.parse(localStorage.getItem("user") || "null")?.role === "admin";
   const [events, setEvents] = useState<NormalizedEvent[]>(alumniEvents.map(normalizeEvent));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [eventForm, setEventForm] = useState({ title: "", date: "", location: "", description: "", eventType: "Offline" });
-  const [eventImage, setEventImage] = useState<File | null>(null);
+  const [eventImages, setEventImages] = useState<File[]>([]);
   const [savingEvent, setSavingEvent] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -138,7 +183,7 @@ const Events = () => {
       formData.append("location", eventForm.location);
       formData.append("description", eventForm.description);
       formData.append("eventType", eventForm.eventType);
-      if (eventImage) formData.append("image", eventImage);
+      eventImages.forEach((file) => formData.append("images", file));
 
       const response = await fetch("/api/events", {
         method: "POST",
@@ -154,7 +199,7 @@ const Events = () => {
       const saved = await response.json();
       setEvents((current) => [normalizeEvent(saved), ...current]);
       setEventForm({ title: "", date: "", location: "", description: "", eventType: "Offline" });
-      setEventImage(null);
+      setEventImages([]);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Could not create event");
     } finally {
@@ -258,7 +303,8 @@ const Events = () => {
                 <option value="Offline">Offline</option>
                 <option value="Online">Online</option>
               </select>
-              <input type="file" accept="image/*" onChange={(e) => setEventImage(e.target.files?.[0] || null)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+              <input type="file" accept="image/*" multiple onChange={(e) => setEventImages(Array.from(e.target.files || []))} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+              {eventImages.length > 0 && <p className="md:col-span-3 text-xs text-slate-500 -mt-2">{eventImages.length} photo{eventImages.length > 1 ? "s" : ""} selected</p>}
               {formError && <p className="md:col-span-3 text-sm text-red-600 font-medium">{formError}</p>}
               <button disabled={savingEvent} type="submit" className="md:col-span-3 btn-gradient py-3 rounded-xl font-bold disabled:opacity-60">{savingEvent ? "Saving..." : "Add Event"}</button>
             </form>
@@ -278,8 +324,8 @@ const Events = () => {
                 <div key={event.id} className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover-lift overflow-hidden flex flex-col">
                   {/* Image Section */}
                   <div className="relative h-56 overflow-hidden bg-slate-200">
-                    <img src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60"></div>
+                    <EventImageCarousel images={event.images} title={event.title} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60 pointer-events-none"></div>
 
                     <DateBadge date={event.date} />
 

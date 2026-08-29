@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, List
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
@@ -79,6 +79,7 @@ class EventResponse(BaseModel):
     location: str
     eventType: str = Field(default="Offline", validation_alias="event_type")
     image: Optional[str] = Field(default=None, validation_alias="image_url")
+    images: List[str] = Field(default_factory=list, validation_alias="image_urls")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 

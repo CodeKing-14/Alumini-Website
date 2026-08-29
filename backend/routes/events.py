@@ -5,7 +5,7 @@ from pathlib import Path
 import uuid
 
 from database import get_db
-from models import Event, User
+from models import Event, EventImage, User
 from schemas import EventResponse
 from routes.auth import require_admin
 
@@ -26,7 +26,7 @@ async def create_event(
     location: str = Form(...),
     description: str = Form(""),
     eventType: str = Form("Offline"),
-    image: Optional[UploadFile] = File(None),
+    images: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
@@ -37,23 +37,31 @@ async def create_event(
     if not location.strip():
         raise HTTPException(status_code=400, detail="Location is required")
 
-    image_url = None
-    if image is not None and image.filename:
-        if image.content_type not in ALLOWED_IMAGE_TYPES:
-            raise HTTPException(status_code=400, detail="Only JPEG, PNG, GIF, or WEBP images are allowed")
+    uploads_dir = Path(__file__).resolve().parent.parent / "static" / "events"
+    saved_urls: list[str] = []
 
-        uploads_dir = Path(__file__).resolve().parent.parent / "static" / "events"
+    # `images` can contain a single empty placeholder UploadFile when the
+    # browser submits the field with no file selected — skip those instead
+    # of erroring, so events without any image still save correctly.
+    real_files = [img for img in images if img is not None and img.filename]
+
+    if real_files:
         uploads_dir.mkdir(parents=True, exist_ok=True)
+        for image in real_files:
+            if image.content_type not in ALLOWED_IMAGE_TYPES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"'{image.filename}' is not a supported image type (use JPEG, PNG, GIF, or WEBP)",
+                )
+            ext = Path(image.filename).suffix or ".jpg"
+            file_name = f"{uuid.uuid4().hex}{ext}"
+            file_path = uploads_dir / file_name
 
-        ext = Path(image.filename).suffix or ".jpg"
-        file_name = f"{uuid.uuid4().hex}{ext}"
-        file_path = uploads_dir / file_name
+            content = await image.read()
+            file_path.write_bytes(content)
 
-        content = await image.read()
-        file_path.write_bytes(content)
-
-        # URL path that matches StaticFiles mount
-        image_url = f"/static/events/{file_name}"
+            # URL path that matches StaticFiles mount
+            saved_urls.append(f"/static/events/{file_name}")
 
     event = Event(
         title=title.strip(),
@@ -61,7 +69,8 @@ async def create_event(
         date=date.strip(),
         location=location.strip(),
         event_type=eventType.strip() or "Offline",
-        image_url=image_url,
+        image_url=saved_urls[0] if saved_urls else None,  # cover image
+        images=[EventImage(image_url=url) for url in saved_urls],
     )
     db.add(event)
     db.commit()
@@ -79,15 +88,16 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if event.image_url:  # type: ignore
-        relative = str(event.image_url).split("/static/")[-1]
-        file_path = Path(__file__).resolve().parent.parent / "static" / relative
+    static_root = Path(__file__).resolve().parent.parent / "static"
+    for url in event.image_urls:  # type: ignore
+        relative = str(url).split("/static/")[-1]
+        file_path = static_root / relative
         if file_path.exists():
             try:
                 file_path.unlink()
             except OSError:
                 pass
 
-    db.delete(event)
+    db.delete(event)  # cascades to event_images rows
     db.commit()
     return None

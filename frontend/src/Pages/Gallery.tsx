@@ -48,7 +48,7 @@ const Gallery = () => {
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [uploadedBy, setUploadedBy] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   // Modal (view image)
   const [selected, setSelected] = useState<GalleryItem | null>(null);
@@ -103,8 +103,8 @@ const Gallery = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file) {
-      alert("Please choose an image file");
+    if (files.length === 0) {
+      alert("Please choose at least one image file");
       return;
     }
     if (!title.trim()) {
@@ -118,7 +118,7 @@ const Gallery = () => {
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("uploadedBy", uploadedBy.trim() || "Anonymous");
-      formData.append("image", file);
+      files.forEach((f) => formData.append("images", f));
 
       const res = await fetch("/api/gallery/uploads", {
         method: "POST",
@@ -129,15 +129,17 @@ const Gallery = () => {
       });
 
       if (!res.ok) {
-        throw new Error("Upload failed");
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || "Upload failed");
       }
 
       const saved = await res.json();
-      setItems((prev) => [saved, ...prev]);
+      const savedList: GalleryItem[] = Array.isArray(saved) ? saved : [saved];
+      setItems((prev) => [...savedList, ...prev]);
 
       setTitle("");
       setUploadedBy("");
-      setFile(null);
+      setFiles([]);
       setError(null);
     } catch (err) {
       console.error("Upload error:", err);
@@ -232,9 +234,13 @@ const Gallery = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    multiple
+                    onChange={(e) => setFiles(Array.from(e.target.files || []))}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                   />
+                  {files.length > 0 && (
+                    <p className="text-xs text-slate-500 mt-1">{files.length} photo{files.length > 1 ? "s" : ""} selected</p>
+                  )}
                 </div>
               </div>
 

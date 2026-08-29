@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
 
@@ -30,7 +31,29 @@ class Event(Base):
     date = Column(String(100), nullable=False) 
     location = Column(String(255), nullable=False)
     event_type = Column(String(20), nullable=False, default="Offline", server_default="Offline")
-    image_url = Column(String(500), nullable=True)
+    image_url = Column(String(500), nullable=True)  # cover image (first uploaded), kept for backward compatibility
+
+    images = relationship(
+        "EventImage",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="EventImage.id",
+    )
+
+    @property
+    def image_urls(self) -> list:
+        """Flat list of every uploaded image URL for this event, cover included."""
+        return [img.image_url for img in self.images]
+
+
+class EventImage(Base):
+    __tablename__ = "event_images"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
+    image_url = Column(String(500), nullable=False)
+
+    event = relationship("Event", back_populates="images")
 
 
 class GalleryItem(Base):
