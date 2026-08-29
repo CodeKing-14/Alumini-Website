@@ -65,33 +65,115 @@ export const alumniEvents = [
   },
 ]
 
+const FALLBACK_IMAGE = alumniEvents[0].image;
+
+type NormalizedEvent = {
+  id: number | string;
+  title: string;
+  date: string;
+  location: string;
+  eventType: string;
+  purpose: string;
+  image: string;
+  description?: string;
+};
+
+// Backend events only carry {id,title,description,date,location,eventType,image}.
+// This fills in the extra display fields the card UI expects and never
+// assumes a particular date format, so it can't crash on odd input.
+function normalizeEvent(raw: any): NormalizedEvent {
+  return {
+    id: raw.id,
+    title: raw.title || "Untitled Event",
+    date: raw.date || "TBA",
+    location: raw.location || "TBA",
+    eventType: raw.eventType || "Offline",
+    purpose: raw.purpose || raw.description || "Alumni event",
+    image: raw.image || FALLBACK_IMAGE,
+    description: raw.description,
+  };
+}
+
+// Renders a small "month / day" badge from whatever date string we got.
+// Never throws — falls back to just showing the raw text if it can't parse.
+function DateBadge({ date }: { date: string }) {
+  const parsed = new Date(date);
+  if (!isNaN(parsed.getTime())) {
+    const month = parsed.toLocaleString("en-US", { month: "short" }).toUpperCase();
+    const day = parsed.getDate();
+    return (
+      <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-900 px-3 py-1.5 rounded-lg shadow-sm text-center min-w-[3.5rem]">
+        <span className="block text-xs font-bold text-blue-600 uppercase">{month}</span>
+        <span className="block text-lg font-black leading-none">{day}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-900 px-3 py-1.5 rounded-lg shadow-sm text-center max-w-[8rem]">
+      <span className="block text-xs font-bold text-blue-600 uppercase line-clamp-2">{date}</span>
+    </div>
+  );
+}
+
 const Events = () => {
   const isAdmin = JSON.parse(localStorage.getItem("user") || "null")?.role === "admin";
-  const [events, setEvents] = useState(alumniEvents);
+  const [events, setEvents] = useState<NormalizedEvent[]>(alumniEvents.map(normalizeEvent));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [eventForm, setEventForm] = useState({ title: "", date: "", location: "", description: "" });
+  const [eventForm, setEventForm] = useState({ title: "", date: "", location: "", description: "", eventType: "Offline" });
+  const [eventImage, setEventImage] = useState<File | null>(null);
   const [savingEvent, setSavingEvent] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleCreateEvent = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
       setSavingEvent(true);
+      setFormError(null);
       const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("title", eventForm.title);
+      formData.append("date", eventForm.date);
+      formData.append("location", eventForm.location);
+      formData.append("description", eventForm.description);
+      formData.append("eventType", eventForm.eventType);
+      if (eventImage) formData.append("image", eventImage);
+
       const response = await fetch("/api/events", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(eventForm),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
-      if (!response.ok) throw new Error("Could not create event");
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.detail || "Could not create event");
+      }
+
       const saved = await response.json();
-      setEvents((current) => [{ ...saved, purpose: saved.description || "Alumni event", eventType: "Offline", image: alumniEvents[0].image }, ...current]);
-      setEventForm({ title: "", date: "", location: "", description: "" });
-      setError(null);
+      setEvents((current) => [normalizeEvent(saved), ...current]);
+      setEventForm({ title: "", date: "", location: "", description: "", eventType: "Offline" });
+      setEventImage(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create event");
+      setFormError(err instanceof Error ? err.message : "Could not create event");
     } finally {
       setSavingEvent(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id: number | string) => {
+    if (!window.confirm("Delete this event?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok && response.status !== 204) throw new Error("Could not delete event");
+      setEvents((current) => current.filter((ev) => ev.id !== id));
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not delete event");
     }
   };
 
@@ -99,21 +181,21 @@ const Events = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/api/events');
+        const response = await fetch('/api/events');
 
         if (!response.ok) {
           throw new Error('Failed to fetch events');
         }
 
         const data = await response.json();
-        if (data && data.length > 0) {
-          setEvents(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setEvents(data.map(normalizeEvent));
         }
         setError(null);
       } catch (err) {
         console.error('Error fetching events:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch events');
-        setEvents(alumniEvents);
+        setEvents(alumniEvents.map(normalizeEvent));
       } finally {
         setLoading(false);
       }
@@ -167,12 +249,18 @@ const Events = () => {
       <div className="min-h-screen bg-slate-50 py-12 -mt-12 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {isAdmin && (
-            <form onSubmit={handleCreateEvent} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-10 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form onSubmit={handleCreateEvent} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-10 grid grid-cols-1 md:grid-cols-3 gap-4">
               <input required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Event title" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
-              <input required value={eventForm.date} onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })} placeholder="Date" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input required type="text" value={eventForm.date} onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })} placeholder="Date (e.g. March 15, 2024)" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
               <input required value={eventForm.location} onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })} placeholder="Location" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
               <input value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} placeholder="Description" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
-              <button disabled={savingEvent} type="submit" className="md:col-span-4 btn-gradient py-3 rounded-xl font-bold disabled:opacity-60">{savingEvent ? "Saving..." : "Add Event"}</button>
+              <select value={eventForm.eventType} onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <option value="Offline">Offline</option>
+                <option value="Online">Online</option>
+              </select>
+              <input type="file" accept="image/*" onChange={(e) => setEventImage(e.target.files?.[0] || null)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+              {formError && <p className="md:col-span-3 text-sm text-red-600 font-medium">{formError}</p>}
+              <button disabled={savingEvent} type="submit" className="md:col-span-3 btn-gradient py-3 rounded-xl font-bold disabled:opacity-60">{savingEvent ? "Saving..." : "Add Event"}</button>
             </form>
           )}
 
@@ -193,11 +281,7 @@ const Events = () => {
                     <img src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60"></div>
 
-                    {/* Date Badge */}
-                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-900 px-3 py-1.5 rounded-lg shadow-sm text-center min-w-[3.5rem]">
-                      <span className="block text-xs font-bold text-blue-600 uppercase">{event.date.split(' ')[0]}</span>
-                      <span className="block text-lg font-black leading-none">{event.date.split(' ')[1].replace(',', '')}</span>
-                    </div>
+                    <DateBadge date={event.date} />
 
                     {/* Event Type Pill */}
                     <div className="absolute bottom-4 left-4">
@@ -209,6 +293,16 @@ const Events = () => {
                         {event.eventType}
                       </span>
                     </div>
+
+                    {isAdmin && typeof event.id === "number" && (
+                      <button
+                        onClick={() => handleDeleteEvent(event.id)}
+                        title="Delete event"
+                        className="absolute top-4 left-4 w-8 h-8 bg-red-600/90 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-sm transition-colors"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
 
                   {/* Content Section */}

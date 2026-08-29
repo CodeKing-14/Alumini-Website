@@ -29,6 +29,8 @@ class Event(Base):
     description = Column(Text, nullable=True)
     date = Column(String(100), nullable=False) 
     location = Column(String(255), nullable=False)
+    event_type = Column(String(20), nullable=False, default="Offline", server_default="Offline")
+    image_url = Column(String(500), nullable=True)
 
 
 class GalleryItem(Base):
@@ -37,4 +39,5 @@ class GalleryItem(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     image_url = Column(String(500), nullable=False)
     title = Column(String(255), nullable=False)
+    uploaded_by = Column(String(255), nullable=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)

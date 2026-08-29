@@ -65,7 +65,7 @@ const Gallery = () => {
     const fetchGallery = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:8000/api/gallery");
+        const res = await fetch("/api/gallery");
         if (!res.ok) throw new Error("Failed to fetch gallery");
 
         const data = await res.json();
@@ -83,6 +83,22 @@ const Gallery = () => {
 
     fetchGallery();
   }, []);
+
+  const handleDelete = async (id: number | string) => {
+    if (!window.confirm("Delete this photo?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/gallery/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok && res.status !== 204) throw new Error("Could not delete photo");
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      setSelected(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not delete photo");
+    }
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +120,7 @@ const Gallery = () => {
       formData.append("uploadedBy", uploadedBy.trim() || "Anonymous");
       formData.append("image", file);
 
-      const res = await fetch("http://localhost:8000/api/gallery/uploads", {
+      const res = await fetch("/api/gallery/uploads", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
@@ -261,6 +277,16 @@ const Gallery = () => {
 
                   {/* Persistent Gradient overlay at bottom for readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                  {isAdmin && typeof item.id === "number" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                      title="Delete photo"
+                      className="absolute top-3 right-3 z-10 w-8 h-8 bg-red-600/90 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-sm transition-colors"
+                    >
+                      ✕
+                    </button>
+                  )}
 
                   <div className="absolute bottom-0 left-0 w-full p-5 flex flex-col justify-end">
                     <h3 className="text-xl font-bold text-white mb-1 drop-shadow-md">

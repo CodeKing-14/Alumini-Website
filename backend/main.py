@@ -9,17 +9,26 @@ from routes import auth_router, members_router, events_router, gallery_router, p
 from database import Base, engine
 
 
+def _ensure_column(table: str, column: str, ddl: str) -> None:
+    """Add `column` to `table` via `ddl` if the table exists but lacks it.
+    Lets us evolve the schema without a full migration framework."""
+    if inspect(engine).has_table(table) and column not in {
+        col["name"] for col in inspect(engine).get_columns(table)
+    }:
+        with engine.begin() as connection:
+            connection.execute(text(ddl))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create DB tables on startup — using lifespan instead of the deprecated
     # @app.on_event("startup") decorator. If MySQL is unavailable, the error
     # surfaces clearly instead of freezing the process.
     try:
-        if inspect(engine).has_table("users") and "role" not in {
-            column["name"] for column in inspect(engine).get_columns("users")
-        }:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'student'"))
+        _ensure_column("users", "role", "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'student'")
+        _ensure_column("events", "event_type", "ALTER TABLE events ADD COLUMN event_type VARCHAR(20) NOT NULL DEFAULT 'Offline'")
+        _ensure_column("events", "image_url", "ALTER TABLE events ADD COLUMN image_url VARCHAR(500) NULL")
+        _ensure_column("gallery", "uploaded_by", "ALTER TABLE gallery ADD COLUMN uploaded_by VARCHAR(255) NULL")
         Base.metadata.create_all(bind=engine)
         print("✅  Database tables verified / created.")
     except Exception as exc:

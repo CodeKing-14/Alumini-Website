@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+backend/venv/
+backend/.venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env
+.env.local
+
+# Uploaded content (runtime data, not source)
+backend/static/gallery/*
+backend/static/events/*
+backend/static/photos/*
+!backend/static/gallery/.gitkeep
+!backend/static/events/.gitkeep
+!backend/static/photos/.gitkeep

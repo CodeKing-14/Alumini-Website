@@ -67,6 +67,9 @@ class AlumniProfileUpdate(BaseModel):
 
 
 # ── Event Schemas ─────────────────────────────────────────────────────────────
+# Frontend (Events.tsx) reads camelCase keys (eventType, image); the ORM
+# column names stay snake_case, so validation_alias bridges attribute -> field,
+# and the plain field name is used again on the way out to JSON.
 
 class EventResponse(BaseModel):
     id: int
@@ -74,8 +77,10 @@ class EventResponse(BaseModel):
     description: Optional[str] = None
     date: str
     location: str
+    eventType: str = Field(default="Offline", validation_alias="event_type")
+    image: Optional[str] = Field(default=None, validation_alias="image_url")
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class EventCreate(BaseModel):
@@ -83,14 +88,18 @@ class EventCreate(BaseModel):
     description: Optional[str] = None
     date: str = Field(..., min_length=1, max_length=100)
     location: str = Field(..., min_length=1, max_length=255)
+    eventType: str = Field(default="Offline")
 
 
 # ── Gallery Schemas ───────────────────────────────────────────────────────────
+# Same bridging pattern as EventResponse above: DB stays snake_case,
+# JSON matches what Gallery.tsx / app.tsx already expect (imageUrl, uploadedBy, createdAt).
 
 class GalleryResponse(BaseModel):
     id: int
-    image_url: str
     title: str
-    uploaded_at: datetime
+    imageUrl: str = Field(validation_alias="image_url")
+    uploadedBy: Optional[str] = Field(default=None, validation_alias="uploaded_by")
+    createdAt: datetime = Field(validation_alias="uploaded_at")
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
