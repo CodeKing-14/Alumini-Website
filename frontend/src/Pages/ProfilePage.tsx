@@ -114,13 +114,22 @@ const ProfilePage: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
         {/* Header Section */}
-        <div className="flex items-center justify-between mb-8 md:mb-12 pt-4">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            My Dashboard
-          </h1>
+        <div className="flex items-center justify-between mb-8 md:mb-12 pt-4 gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <button
+              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+              title="Go back"
+              className="shrink-0 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full transition-all backdrop-blur-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </button>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight truncate">
+              My Dashboard
+            </h1>
+          </div>
           <button
             onClick={handleLogout}
-            className="bg-white/10 hover:bg-white/20 text-white border border-white/20 py-2 px-6 rounded-full transition-all text-sm font-semibold backdrop-blur-sm"
+            className="shrink-0 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-2 px-6 rounded-full transition-all text-sm font-semibold backdrop-blur-sm"
           >
             Logout
           </button>
