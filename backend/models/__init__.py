@@ -30,8 +30,9 @@ class Event(Base):
     description = Column(Text, nullable=True)
     date = Column(String(100), nullable=False) 
     location = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     event_type = Column(String(20), nullable=False, default="Offline", server_default="Offline")
-    image_url = Column(String(500), nullable=True)  # cover image (first uploaded), kept for backward compatibility
+    image_url = Column(String(500), nullable=True)  # kept for backward compatibility
 
     images = relationship(
         "EventImage",
@@ -42,8 +43,8 @@ class Event(Base):
 
     @property
     def image_urls(self) -> list:
-        """Flat list of every uploaded image URL for this event, cover included."""
-        return [img.image_url for img in self.images]
+        """Flat list of every uploaded image data-URL for this event."""
+        return [img.image_data for img in self.images if img.image_data]
 
 
 class EventImage(Base):
@@ -51,7 +52,8 @@ class EventImage(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
-    image_url = Column(String(500), nullable=False)
+    image_url = Column(String(500), nullable=True)  # legacy, kept for backward compat
+    image_data = Column(Text(length=4294967295), nullable=True)  # base64 data URL (LONGTEXT in MySQL)
 
     event = relationship("Event", back_populates="images")
 
@@ -60,7 +62,37 @@ class GalleryItem(Base):
     __tablename__ = "gallery"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    image_url = Column(String(500), nullable=False)
+    image_url = Column(String(500), nullable=True)  # legacy, kept for backward compat
     title = Column(String(255), nullable=False)
     uploaded_by = Column(String(255), nullable=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Multiple images per gallery entry
+    images = relationship(
+        "GalleryImage",
+        back_populates="gallery_item",
+        cascade="all, delete-orphan",
+        order_by="GalleryImage.id",
+    )
+
+    @property
+    def image_data_list(self) -> list:
+        """All base64 data URLs for this gallery entry."""
+        return [img.image_data for img in self.images if img.image_data]
+
+    @property
+    def cover_image(self) -> str:
+        """First image as cover, fallback to legacy image_url."""
+        if self.images and self.images[0].image_data:
+            return self.images[0].image_data
+        return self.image_url or ""
+
+
+class GalleryImage(Base):
+    __tablename__ = "gallery_images"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    gallery_item_id = Column(Integer, ForeignKey("gallery.id", ondelete="CASCADE"), nullable=False, index=True)
+    image_data = Column(Text(length=4294967295), nullable=False)  # base64 data URL (LONGTEXT in MySQL)
+
+    gallery_item = relationship("GalleryItem", back_populates="images")

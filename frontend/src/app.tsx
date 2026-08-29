@@ -9,11 +9,13 @@ type GalleryItem = {
   id: number | string;
   title: string;
   imageUrl: string;
+  imageUrls?: string[];
   createdAt?: string;
 };
 
 const App = () => {
-  const [popupOpen, setPopupOpen] = useState(true);
+  const isLoggedIn = !!localStorage.getItem("token");
+  const [popupOpen, setPopupOpen] = useState(!isLoggedIn); // Don't show popup if logged in
   const [appLoading, setAppLoading] = useState(true);
 
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
@@ -28,11 +30,12 @@ const App = () => {
     return () => clearTimeout(loadingTimer);
   }, []);
 
-  // Popup auto close
+  // Popup auto close (only if popup is open)
   useEffect(() => {
+    if (!popupOpen) return;
     const timer = setTimeout(() => setPopupOpen(false), 1000000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [popupOpen]);
 
   // Fetch gallery from backend
   useEffect(() => {
@@ -73,7 +76,8 @@ const App = () => {
   return (
     <>
       <main className="flex flex-col min-h-screen bg-slate-50">
-        <Popup open={popupOpen} onClose={handleClose} />
+        {/* Only show popup if NOT logged in */}
+        {!isLoggedIn && <Popup open={popupOpen} onClose={handleClose} />}
 
         <div className="flex-1">
           <Outlet />
@@ -100,18 +104,37 @@ const App = () => {
                 </p>
 
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                  <button
-                    className="btn-gradient px-8 py-3.5 rounded-full text-lg font-semibold w-full sm:w-auto"
-                    onClick={() => navigate("/login")}
-                  >
-                    Join the Network
-                  </button>
-                  <button
-                    className="px-8 py-3.5 bg-white/10 backdrop-blur-sm border border-white/30 text-white font-semibold rounded-full hover:bg-white/20 transition-all duration-300 w-full sm:w-auto"
-                    onClick={() => navigate("/login")}
-                  >
-                    Member Login
-                  </button>
+                  {isLoggedIn ? (
+                    <>
+                      <button
+                        className="btn-gradient px-8 py-3.5 rounded-full text-lg font-semibold w-full sm:w-auto"
+                        onClick={() => navigate("/ProfilePage")}
+                      >
+                        Go to Profile
+                      </button>
+                      <button
+                        className="px-8 py-3.5 bg-white/10 backdrop-blur-sm border border-white/30 text-white font-semibold rounded-full hover:bg-white/20 transition-all duration-300 w-full sm:w-auto"
+                        onClick={() => navigate("/events")}
+                      >
+                        View Events
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="btn-gradient px-8 py-3.5 rounded-full text-lg font-semibold w-full sm:w-auto"
+                        onClick={() => navigate("/login")}
+                      >
+                        Join the Network
+                      </button>
+                      <button
+                        className="px-8 py-3.5 bg-white/10 backdrop-blur-sm border border-white/30 text-white font-semibold rounded-full hover:bg-white/20 transition-all duration-300 w-full sm:w-auto"
+                        onClick={() => navigate("/login")}
+                      >
+                        Member Login
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -245,6 +268,12 @@ const App = () => {
                             <p className="text-indigo-200 text-sm transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
                               {new Date(photo.createdAt).toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric' })}
                             </p>
+                          )}
+                          {/* Image count badge */}
+                          {photo.imageUrls && photo.imageUrls.length > 1 && (
+                            <span className="absolute top-4 right-4 bg-black/50 text-white text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm">
+                              📸 {photo.imageUrls.length} photos
+                            </span>
                           )}
                         </div>
                       </div>

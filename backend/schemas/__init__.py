@@ -93,13 +93,15 @@ class EventCreate(BaseModel):
 
 
 # ── Gallery Schemas ───────────────────────────────────────────────────────────
-# Same bridging pattern as EventResponse above: DB stays snake_case,
-# JSON matches what Gallery.tsx / app.tsx already expect (imageUrl, uploadedBy, createdAt).
+# Gallery entries can now have multiple images. The response includes:
+# - imageUrl: first/cover image (for backward compat and grid thumbnails)
+# - imageUrls: all images (for the popup slider)
 
 class GalleryResponse(BaseModel):
     id: int
     title: str
-    imageUrl: str = Field(validation_alias="image_url")
+    imageUrl: str = Field(validation_alias="cover_image")
+    imageUrls: List[str] = Field(default_factory=list, validation_alias="image_data_list")
     uploadedBy: Optional[str] = Field(default=None, validation_alias="uploaded_by")
     createdAt: datetime = Field(validation_alias="uploaded_at")
 

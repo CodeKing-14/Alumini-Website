@@ -1,8 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Form, UploadFile, File, HTTPException, status
 from sqlalchemy.orm import Session
-from pathlib import Path
-import uuid
+import base64
 
 from database import get_db
 from models import Event, EventImage, User
@@ -17,6 +16,14 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 @router.get("/events", response_model=List[EventResponse])
 def get_events(db: Session = Depends(get_db)):
     return db.query(Event).order_by(Event.id.desc()).all()
+
+
+@router.get("/events/{event_id}", response_model=EventResponse)
+def get_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
 
 
 @router.post("/events", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -37,31 +44,23 @@ async def create_event(
     if not location.strip():
         raise HTTPException(status_code=400, detail="Location is required")
 
-    uploads_dir = Path(__file__).resolve().parent.parent / "static" / "events"
-    saved_urls: list[str] = []
-
     # `images` can contain a single empty placeholder UploadFile when the
-    # browser submits the field with no file selected — skip those instead
-    # of erroring, so events without any image still save correctly.
+    # browser submits the field with no file selected — skip those.
     real_files = [img for img in images if img is not None and img.filename]
 
-    if real_files:
-        uploads_dir.mkdir(parents=True, exist_ok=True)
-        for image in real_files:
-            if image.content_type not in ALLOWED_IMAGE_TYPES:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"'{image.filename}' is not a supported image type (use JPEG, PNG, GIF, or WEBP)",
-                )
-            ext = Path(image.filename).suffix or ".jpg"
-            file_name = f"{uuid.uuid4().hex}{ext}"
-            file_path = uploads_dir / file_name
+    saved_data_urls: list[str] = []
 
-            content = await image.read()
-            file_path.write_bytes(content)
-
-            # URL path that matches StaticFiles mount
-            saved_urls.append(f"/static/events/{file_name}")
+    for image in real_files:
+        if image.content_type not in ALLOWED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"'{image.filename}' is not a supported image type (use JPEG, PNG, GIF, or WEBP)",
+            )
+        content = await image.read()
+        b64 = base64.b64encode(content).decode("utf-8")
+        mime = image.content_type or "image/jpeg"
+        data_url = f"data:{mime};base64,{b64}"
+        saved_data_urls.append(data_url)
 
     event = Event(
         title=title.strip(),
@@ -69,8 +68,8 @@ async def create_event(
         date=date.strip(),
         location=location.strip(),
         event_type=eventType.strip() or "Offline",
-        image_url=saved_urls[0] if saved_urls else None,  # cover image
-        images=[EventImage(image_url=url) for url in saved_urls],
+        image_url=None,  # no longer using file path
+        images=[EventImage(image_data=data_url) for data_url in saved_data_urls],
     )
     db.add(event)
     db.commit()
@@ -88,16 +87,42 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    static_root = Path(__file__).resolve().parent.parent / "static"
-    for url in event.image_urls:  # type: ignore
-        relative = str(url).split("/static/")[-1]
-        file_path = static_root / relative
-        if file_path.exists():
-            try:
-                file_path.unlink()
-            except OSError:
-                pass
-
+    # No filesystem cleanup needed — images are in the DB
     db.delete(event)  # cascades to event_images rows
     db.commit()
     return None
+
+
+@router.post("/events/{event_id}/photos", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def upload_event_photo(
+    event_id: int,
+    photo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    if photo.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"'{photo.filename}' is not a supported image type (use JPEG, PNG, GIF, or WEBP)",
+        )
+
+    content = await photo.read()
+    b64 = base64.b64encode(content).decode("utf-8")
+    mime = photo.content_type or "image/jpeg"
+    data_url = f"data:{mime};base64,{b64}"
+
+    event_image = EventImage(event_id=event.id, image_data=data_url)
+    db.add(event_image)
+    db.commit()
+    db.refresh(event_image)
+
+    return {
+        "id": event_image.id,
+        "event_id": event_image.event_id,
+        "image_url": event_image.image_data,
+        "uploaded_at": str(event.created_at),
+    }
