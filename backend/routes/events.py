@@ -84,12 +84,13 @@ def delete_event(
     admin: User = Depends(require_admin),
 ):
     event = db.query(Event).filter(Event.id == event_id).first()
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # No filesystem cleanup needed — images are in the DB
-    db.delete(event)  # cascades to event_images rows
+    db.delete(event)
     db.commit()
+
     return None
 
 
