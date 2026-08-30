@@ -11,6 +11,7 @@ frontend/dist/
 # Env
 .env.local
 .env.*.local
+.env*
 
 # Uploaded content (runtime data, not source)
 backend/static/gallery/*
