@@ -1,9 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from backend directory if present, otherwise load from cwd
+backend_env = Path(__file__).resolve().parent.parent / ".env"
+if backend_env.exists():
+    load_dotenv(backend_env)
+else:
+    load_dotenv()
 
 # MySQL Database connection with pymysql
 # Override DATABASE_URL env var to change credentials

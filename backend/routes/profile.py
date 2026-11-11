@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, status
 from sqlalchemy.orm import Session
 import shutil
 import uuid
 from pathlib import Path
 
 from database import get_db
-from models import User
+from models import User, AdminOTP
 from schemas import AlumniProfileResponse, AlumniProfileUpdate
 from routes.auth import get_current_user
 
@@ -27,6 +27,7 @@ def _user_to_profile(user: User) -> dict:
         "jobTitle": user.job_title,
         "bio": user.bio,
         "photoUrl": user.photo_url,
+        "role": user.role,
     }
 
 
@@ -83,3 +84,44 @@ def upload_photo(
 def get_registered_events(user: User = Depends(get_current_user)):
     # No event-registration table yet — return empty list
     return []
+
+
+@router.delete("/me", status_code=status.HTTP_200_OK)
+@router.delete("/profile", status_code=status.HTTP_200_OK)
+def delete_account(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete user account and all associated profile data.
+    Works for BOTH student accounts and administrator accounts.
+    Automatically removes user from MySQL and alumni members directory immediately.
+    """
+    user_id = user.id
+    user_email = user.email
+    user_role = str(user.role)
+
+    # Clean up any OTP records for this email if it was an admin
+    try:
+        db.query(AdminOTP).filter(AdminOTP.email == user_email).delete()
+    except Exception:
+        pass
+
+    # Clean up uploaded photo if stored locally
+    if user.photo_url and str(user.photo_url).startswith("/static/photos/"):
+        photo_filename = str(user.photo_url).replace("/static/photos/", "")
+        photo_path = STATIC_PHOTOS_DIR / photo_filename
+        if photo_path.exists():
+            try:
+                photo_path.unlink()
+            except Exception:
+                pass
+
+    db.delete(user)
+    db.commit()
+
+    return {
+        "message": "Account successfully deleted",
+        "deletedUserId": user_id,
+        "email": user_email,
+        "role": user_role,
+    }

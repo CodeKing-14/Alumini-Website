@@ -6,6 +6,7 @@ import {
   uploadPhoto,
   getRegisteredEvents,
   logout,
+  deleteAccount,
 } from "../services/api";
 
 import type { AlumniProfile, RegisteredEvent } from "../services/api";
@@ -20,6 +21,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
@@ -31,6 +33,16 @@ const ProfilePage: React.FC = () => {
         setProfile(user);
         setForm(user);
         setEvents(ev);
+
+        // Keep localStorage user role synced
+        if (user && user.role) {
+          try {
+            const currentStored = JSON.parse(localStorage.getItem("user") || "{}");
+            localStorage.setItem("user", JSON.stringify({ ...currentStored, ...user }));
+          } catch {
+            // ignore
+          }
+        }
       } catch (err) {
         setError("Failed to load profile.");
       } finally {
@@ -77,6 +89,25 @@ const ProfilePage: React.FC = () => {
     await logout();
     navigate("/");
     alert("Logged out successfully!");
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account?\n\nThis will permanently remove your profile, login credentials, and remove you from the alumni members directory. This action CANNOT be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      await deleteAccount();
+      alert("Your account has been permanently deleted from the database and directory.");
+      navigate("/");
+    } catch (err) {
+      console.error("Account deletion failed:", err);
+      alert(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -181,8 +212,16 @@ const ProfilePage: React.FC = () => {
               <h2 className="text-2xl font-bold text-slate-900 mb-1">{form.fullName || "Alumni User"}</h2>
               <p className="text-blue-600 font-semibold mb-4">{form.jobTitle || "Professional"} @ {form.currentCompany || "Company"}</p>
               
-              <div className="inline-block px-4 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-bold tracking-wider uppercase mb-6 border border-slate-200">
-                Class of {form.batchYear || "Unknown"}
+              <div className="flex flex-wrap gap-2 justify-center mb-6">
+                <span className="inline-block px-4 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-bold tracking-wider uppercase border border-slate-200">
+                  Class of {form.batchYear || "Unknown"}
+                </span>
+                {(profile?.role === "admin" || form.role === "admin" || JSON.parse(localStorage.getItem("user") || "null")?.role === "admin") && (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold uppercase tracking-wider border border-amber-300">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Administrator
+                  </span>
+                )}
               </div>
 
               <div className="space-y-3 text-left border-t border-slate-100 pt-6">
@@ -195,12 +234,76 @@ const ProfilePage: React.FC = () => {
                    <span>{form.phone || "No Phone listed"}</span>
                 </div>
               </div>
+
+              {/* Danger Zone: Permanent Account Deletion */}
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 shadow-xs"
+                >
+                  <svg className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {deleting ? "Deleting Account..." : "Delete Account"}
+                </button>
+                <p className="text-[11px] text-slate-400 mt-2 text-center">
+                  Permanently deletes your account and removes you from the members page.
+                </p>
+              </div>
             </div>
           </div>
 
           {/* RIGHT: Form & Events */}
           <div className="lg:col-span-2 space-y-8">
             
+            {/* Administrator Control Hub (visible only for Admin) */}
+            {(profile?.role === "admin" || form.role === "admin" || JSON.parse(localStorage.getItem("user") || "null")?.role === "admin") && (
+              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl">
+                    ⚡
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      Administrator Control Hub
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                        Active Access
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300">Quick management shortcuts for verified administrators.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <button
+                    onClick={() => navigate("/events")}
+                    className="p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/10 transition-all hover:scale-[1.02] group"
+                  >
+                    <span className="text-xl mb-1 block">📅</span>
+                    <span className="font-bold text-sm block text-white group-hover:text-blue-300">Manage Events</span>
+                    <span className="text-[11px] text-slate-300 block">Create events & upload event photos</span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/gallery")}
+                    className="p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/10 transition-all hover:scale-[1.02] group"
+                  >
+                    <span className="text-xl mb-1 block">📸</span>
+                    <span className="font-bold text-sm block text-white group-hover:text-purple-300">Manage Gallery</span>
+                    <span className="text-[11px] text-slate-300 block">Upload memories and event albums</span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/jobs")}
+                    className="p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/10 transition-all hover:scale-[1.02] group"
+                  >
+                    <span className="text-xl mb-1 block">💼</span>
+                    <span className="font-bold text-sm block text-white group-hover:text-emerald-300">Post Jobs</span>
+                    <span className="text-[11px] text-slate-300 block">Publish career opportunities</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Edit Profile Form */}
             <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl p-6 sm:p-8 border border-slate-100">
               <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">

@@ -100,16 +100,22 @@ const Gallery = () => {
     try {
       setLoading(true);
       const res = await fetch("/api/gallery");
-      if (!res.ok) throw new Error("Failed to fetch gallery");
+      if (!res.ok) throw new Error("Backend server not responding");
 
       const data = await res.json();
-      if (Array.isArray(data)) setItems(data);
-
+      if (Array.isArray(data)) {
+        if (data.length > 0) {
+          setItems(data);
+        } else {
+          setItems(cachedGallery);
+        }
+      }
       setError(null);
     } catch (err) {
-      console.error("Gallery fetch error:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch gallery");
+      console.warn("Gallery fetch warning:", err);
+      // Seamlessly show cached gallery without intrusive error
       setItems(cachedGallery);
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -404,8 +410,12 @@ const Gallery = () => {
                     onClick={() => openGallery(item)}
                   >
                     <img
-                      src={item.imageUrl}
+                      src={item.imageUrl || (item.imageUrls && item.imageUrls[0]) || "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop"}
                       alt={item.title}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop";
+                      }}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
 
@@ -485,8 +495,12 @@ const Gallery = () => {
 
                 <div className="relative bg-slate-100 min-h-[300px] flex items-center justify-center">
                   <img
-                    src={currentImage}
+                    src={currentImage || "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop"}
                     alt={`${selected.title} - ${slideIndex + 1}`}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop";
+                    }}
                     className="w-full max-h-[75vh] object-contain transition-opacity duration-200"
                   />
 

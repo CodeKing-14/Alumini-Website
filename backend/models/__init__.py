@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -9,8 +9,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)  # Nullable for OAuth accounts
     role = Column(String(20), nullable=False, default="student", server_default="student")
+    google_id = Column(String(255), unique=True, index=True, nullable=True)
+    auth_provider = Column(String(50), nullable=False, default="local", server_default="local")
 
     # Extended profile fields
     phone = Column(String(20), nullable=True)
@@ -64,6 +66,7 @@ class GalleryItem(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     image_url = Column(String(500), nullable=True)  # legacy, kept for backward compat
     title = Column(String(255), nullable=False)
+    category = Column(String(100), nullable=True)
     uploaded_by = Column(String(255), nullable=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -96,3 +99,32 @@ class GalleryImage(Base):
     image_data = Column(Text(length=4294967295), nullable=False)  # base64 data URL (LONGTEXT in MySQL)
 
     gallery_item = relationship("GalleryItem", back_populates="images")
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    title = Column(String(255), nullable=False)
+    company = Column(String(255), nullable=False)
+    location = Column(String(255), nullable=False)
+    job_type = Column(String(50), nullable=False, default="Full-time", server_default="Full-time")
+    experience_level = Column(String(50), nullable=True)
+    salary_range = Column(String(100), nullable=True)
+    description = Column(Text, nullable=False)
+    requirements = Column(Text, nullable=True)
+    application_email = Column(String(255), nullable=False, default="sritalumni@sritcbe", server_default="sritalumni@sritcbe")
+    deadline = Column(String(100), nullable=True)
+    posted_by = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class AdminOTP(Base):
+    __tablename__ = "admin_otps"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    otp_code = Column(String(10), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    is_used = Column(Boolean, default=False, nullable=False)

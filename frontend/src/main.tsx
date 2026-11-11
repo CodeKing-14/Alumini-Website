@@ -9,6 +9,7 @@ import Login from "./Pages/Login";
 import Gallery from "./Pages/Gallery";
 import Member from './Pages/Member';
 import ProfilePage from "./Pages/ProfilePage";
+import Jobs from "./Pages/Jobs";
 
 
 const router = createBrowserRouter([
@@ -36,6 +37,15 @@ const router = createBrowserRouter([
   {
     path:"/events",
     element:<Events />,
+    children:[
+        {
+            index:true,element: <Header />
+        }
+    ]
+  },
+  {
+    path:"/jobs",
+    element:<Jobs />,
     children:[
         {
             index:true,element: <Header />

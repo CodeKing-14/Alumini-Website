@@ -6,7 +6,7 @@ from pathlib import Path
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError
 
-from routes import auth_router, members_router, events_router, gallery_router, profile_router
+from routes import auth_router, members_router, events_router, gallery_router, profile_router, jobs_router
 from database import Base, engine
 
 
@@ -42,6 +42,9 @@ async def lifespan(app: FastAPI):
     # surfaces clearly instead of freezing the process.
     try:
         _ensure_column("users", "role", "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'student'")
+        _ensure_column("users", "google_id", "ALTER TABLE users ADD COLUMN google_id VARCHAR(255) NULL")
+        _ensure_column("users", "auth_provider", "ALTER TABLE users ADD COLUMN auth_provider VARCHAR(50) NOT NULL DEFAULT 'local'")
+        _ensure_nullable("users", "password_hash", "VARCHAR(255)")
         _ensure_column("events", "event_type", "ALTER TABLE events ADD COLUMN event_type VARCHAR(20) NOT NULL DEFAULT 'Offline'")
         _ensure_column("events", "image_url", "ALTER TABLE events ADD COLUMN image_url VARCHAR(500) NULL")
         _ensure_column("gallery", "uploaded_by", "ALTER TABLE gallery ADD COLUMN uploaded_by VARCHAR(255) NULL")
@@ -104,3 +107,4 @@ app.include_router(members_router, prefix="/api")
 app.include_router(events_router, prefix="/api")
 app.include_router(gallery_router, prefix="/api")
 app.include_router(profile_router, prefix="/api")
+app.include_router(jobs_router, prefix="/api")

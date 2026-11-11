@@ -28,6 +28,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li><button onClick={() => navigate('/about')} className="hover:text-blue-400 transition-colors">About Us</button></li>
               <li><button onClick={() => navigate('/events')} className="hover:text-blue-400 transition-colors">Events & Reunions</button></li>
+              <li><button onClick={() => navigate('/jobs')} className="hover:text-blue-400 transition-colors">Jobs & Careers</button></li>
               <li><button onClick={() => navigate('/gallery')} className="hover:text-blue-400 transition-colors">Photo Gallery</button></li>
               <li><button onClick={() => navigate('/member')} className="hover:text-blue-400 transition-colors">Members Directory</button></li>
             </ul>
@@ -38,11 +39,11 @@ const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-3">
                 <span className="text-blue-500 mt-1">✉</span>
-                <span className="text-slate-400">alumni@srit.edu</span>
+                <span className="text-s400">sritalumni@gmail.com</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-blue-500 mt-1">📞</span>
-                <span className="text-slate-400">+91-XXXX-XXXX-XXXX</span>
+                <span className="te400">+91 9489259542</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-blue-500 mt-1">📍</span>

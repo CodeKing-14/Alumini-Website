@@ -6,12 +6,19 @@ const Header = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Check if user is logged in on mount
+  // Check if user is logged in and role on mount and location changes
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      setIsAdmin(!!token && user?.role === "admin");
+    } catch {
+      setIsAdmin(false);
+    }
   }, [location]);
 
   // Handle scroll for glassmorphism effect
@@ -27,6 +34,7 @@ const Header = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
+    setIsAdmin(false);
     navigate("/");
   };
 
@@ -34,6 +42,7 @@ const Header = () => {
     { label: "Home", path: "/" },
     { label: "About", path: "/about" },
     { label: "Events", path: "/events" },
+    { label: "Jobs", path: "/jobs" },
     { label: "Gallery", path: "/gallery" },
     { label: "Members", path: "/member" },
   ];
@@ -84,6 +93,12 @@ const Header = () => {
             <div className="hidden md:flex items-center space-x-3">
               {isLoggedIn ? (
                 <>
+                  {isAdmin && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 shadow-xs flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                      Admin
+                    </span>
+                  )}
                   <button
                     onClick={() => navigate("/ProfilePage")}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
@@ -91,7 +106,7 @@ const Header = () => {
                         ? "bg-blue-50 text-blue-700 shadow-sm"
                         : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
                     }`}
-                  >`    `
+                  >
                     Profile
                   </button>
                   <button
@@ -105,7 +120,7 @@ const Header = () => {
                 <>
                   <button
                     onClick={() => navigate("/login")}
-                    className="px-4 py-2 text-sm font-semibold text-slate-600 ho`ver:text-blue-600 transition-colors"
+                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
                   >
                     Sign In
                   </button>
@@ -171,6 +186,14 @@ const Header = () => {
             
             {isLoggedIn ? (
               <>
+                {isAdmin && (
+                  <div className="px-4 py-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                      Administrator Account
+                    </span>
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     navigate("/ProfilePage");

@@ -7,13 +7,15 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class UserCreate(BaseModel):
     """Used by POST /register.
-    Frontend Login.tsx sends { fullName, email, password, batchYear }.
+    Frontend Login.tsx sends { fullName, email, password, batchYear, role, otp }.
     We accept both 'name' and 'fullName' for flexibility.
     """
     fullName: str = Field(..., min_length=2, max_length=100, alias="fullName")
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=72)
     batchYear: Optional[int] = None
+    role: str = "student"
+    otp: Optional[str] = None
 
     model_config = {"populate_by_name": True}
 
@@ -39,6 +41,23 @@ class UserLogin(BaseModel):
         return str(v)
 
 
+class GoogleLoginRequest(BaseModel):
+    credential: str
+    role: str = "student"
+    otp: Optional[str] = None
+
+
+class AdminOTPRequest(BaseModel):
+    targetEmail: Optional[EmailStr] = None
+
+
+class AdminOTPResponse(BaseModel):
+    message: str
+    targetEmail: str
+    emailDelivered: Optional[bool] = None
+    deliveryError: Optional[str] = None
+
+
 # ── Profile Schemas ───────────────────────────────────────────────────────────
 
 class AlumniProfileResponse(BaseModel):
@@ -52,6 +71,7 @@ class AlumniProfileResponse(BaseModel):
     jobTitle: Optional[str] = None
     bio: Optional[str] = None
     photoUrl: Optional[str] = None
+    role: Optional[str] = "student"
 
     model_config = {"from_attributes": True}
 
@@ -102,7 +122,43 @@ class GalleryResponse(BaseModel):
     title: str
     imageUrl: str = Field(validation_alias="cover_image")
     imageUrls: List[str] = Field(default_factory=list, validation_alias="image_data_list")
+    category: Optional[str] = None
     uploadedBy: Optional[str] = Field(default=None, validation_alias="uploaded_by")
     createdAt: datetime = Field(validation_alias="uploaded_at")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
+
+
+# ── Job Schemas ───────────────────────────────────────────────────────────────
+
+class JobResponse(BaseModel):
+    id: int
+    title: str
+    company: str
+    location: str
+    jobType: str = Field(default="Full-time", validation_alias="job_type")
+    experienceLevel: Optional[str] = Field(default=None, validation_alias="experience_level")
+    salaryRange: Optional[str] = Field(default=None, validation_alias="salary_range")
+    description: str
+    requirements: Optional[str] = None
+    applicationEmail: str = Field(default="sritalumni@sritcbe", validation_alias="application_email")
+    deadline: Optional[str] = None
+    postedBy: Optional[str] = Field(default=None, validation_alias="posted_by")
+    createdAt: datetime = Field(validation_alias="created_at")
+
+    model_config = {"from_attributes": True, "populate_by_name": True}
+
+
+class JobCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=255)
+    company: str = Field(..., min_length=2, max_length=255)
+    location: str = Field(..., min_length=2, max_length=255)
+    jobType: str = Field(default="Full-time", alias="jobType")
+    experienceLevel: Optional[str] = Field(default=None, alias="experienceLevel")
+    salaryRange: Optional[str] = Field(default=None, alias="salaryRange")
+    description: str = Field(..., min_length=10)
+    requirements: Optional[str] = None
+    applicationEmail: str = Field(default="sritalumni@sritcbe", alias="applicationEmail")
+    deadline: Optional[str] = None
+
+    model_config = {"populate_by_name": True}

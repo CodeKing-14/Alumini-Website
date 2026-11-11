@@ -19,6 +19,7 @@ export type AlumniProfile = {
   location?: string;
   bio?: string;
   photoUrl?: string;
+  role?: string;
 };
 
 export type RegisteredEvent = {
@@ -164,4 +165,47 @@ export async function logout(): Promise<void> {
   // Always clear local storage regardless of API response
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+}
+
+export async function deleteAccount(): Promise<{ message: string }> {
+  if (USE_MOCK) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return Promise.resolve({ message: "Account deleted successfully" });
+  }
+
+  const token = getAuthToken();
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  let res = await fetch("/api/me", {
+    method: "DELETE",
+    headers,
+  });
+
+  // Fallback to alternative routes if proxy or router configuration differs
+  if (res.status === 404 || res.status === 405) {
+    res = await fetch("/api/profile", {
+      method: "DELETE",
+      headers,
+    });
+  }
+  if (res.status === 404 || res.status === 405) {
+    res = await fetch("/api/auth/me", {
+      method: "DELETE",
+      headers,
+    });
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to delete account");
+  }
+
+  // Clear session after successful deletion
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  return res.json();
 }

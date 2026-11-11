@@ -2,21 +2,35 @@ import { Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Footer from "./Footer";
 
-export const alumniMembers = [
+export type AlumniMember = {
+  id: number | string;
+  name: string;
+  batch?: string;
+  role?: string;
+  accountRole?: string;
+  email?: string;
+  company?: string;
+  location?: string;
+  image?: string;
+};
+
+export const alumniMembers: AlumniMember[] = [
   {
     id: 1,
     name: "Prasanth Kumar",
     batch: "2018 - CSE",
     role: "Software Engineer",
+    accountRole: "student",
     company: "TCS",
     location: "Chennai",
     image: "https://randomuser.me/api/portraits/men/1.jpg",
   },
   {
     id: 2,
-    name: "Nandhini S",
+    name: "Nandhini P",
     batch: "2019 - ECE",
     role: "Data Analyst",
+    accountRole: "student",
     company: "Infosys",
     location: "Bangalore",
     image: "https://randomuser.me/api/portraits/women/2.jpg",
@@ -26,14 +40,33 @@ export const alumniMembers = [
     name: "Arun Raj",
     batch: "2017 - MECH",
     role: "Project Engineer",
+    accountRole: "student",
     company: "L&T",
     location: "Hyderabad",
     image: "https://randomuser.me/api/portraits/men/3.jpg",
   },
 ];
 
+// Helper to strictly detect and exclude any administrator account
+const isAdministrator = (m: AlumniMember): boolean => {
+  const accRole = (m.accountRole || "").toLowerCase().trim();
+  const email = (m.email || "").toLowerCase().trim();
+  const jobRole = (m.role || "").toLowerCase().trim();
+  const name = (m.name || "").toLowerCase().trim();
+
+  return (
+    accRole === "admin" ||
+    accRole.includes("admin") ||
+    email === "sritalumni@gmail.com" ||
+    email.startsWith("admin@") ||
+    jobRole === "administrator" ||
+    name === "administrator" ||
+    name === "admin"
+  );
+};
+
 const Member = () => {
-  const [members, setMembers] = useState<typeof alumniMembers>([]);
+  const [members, setMembers] = useState<AlumniMember[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,14 +82,18 @@ const Member = () => {
         }
 
         const data = await response.json();
-        setMembers(Array.isArray(data) ? data : []);
+        // Strict restriction: Filter out all admin accounts (new or existing)
+        const nonAdminMembers = (Array.isArray(data) ? data : []).filter(
+          (m: AlumniMember) => !isAdministrator(m)
+        );
+        setMembers(nonAdminMembers);
         setError(null);
       } catch (err) {
         console.error("Error fetching members:", err);
         setError(
           err instanceof Error ? err.message : "Failed to fetch members"
         );
-        setMembers(alumniMembers);
+        setMembers(alumniMembers.filter((m) => !isAdministrator(m)));
       } finally {
         setLoading(false);
       }
@@ -65,8 +102,10 @@ const Member = () => {
     fetchMembers();
   }, []);
 
-  const filteredMembers = members.filter((member) =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMembers = members.filter(
+    (member) =>
+      !isAdministrator(member) &&
+      member.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {

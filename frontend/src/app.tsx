@@ -49,7 +49,8 @@ const App = () => {
         setGallery(Array.isArray(data) ? data : []);
         setGalleryError(null);
       } catch (err) {
-        setGalleryError("Gallery not available");
+        console.warn("Could not load dynamic gallery:", err);
+        setGalleryError(null);
         setGallery([]);
       } finally {
         setGalleryLoading(false);
@@ -255,8 +256,12 @@ const App = () => {
                         onClick={() => navigate("/gallery")}
                       >
                         <img
-                          src={photo.imageUrl}
+                          src={photo.imageUrl || "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop"}
                           alt={photo.title}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop";
+                          }}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                         {/* Hover Overlay */}
